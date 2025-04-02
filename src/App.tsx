@@ -5,25 +5,24 @@ import usersFromServer from './api/users';
 import todosFromServer from './api/todos';
 import { TodoList } from './components/TodoList';
 
+const todosWithUsers = todosFromServer.map(todo => ({
+  ...todo,
+  title: todo.title.replace(/[^a-zA-Zа-яА-ЯіІїЇєЄґҐ0-9\s]/g, ''),
+  user: usersFromServer.find(user => user.id === todo.userId),
+}));
+
 export const App = () => {
   const users = [...usersFromServer];
 
   const [selectedUser, setSelectedUser] = useState('0');
-  const [todos, setTodos] = useState(
-    [...todosFromServer].map(todo => ({
-      ...todo,
-      user: users.find(user => user.id === todo.userId),
-    })),
-  );
+  const [todos, setTodos] = useState(todosWithUsers);
 
   const [inputTitle, setInputTitle] = useState('');
   const [titleError, setTitleError] = useState(false);
-  const [selectEroor, setSelectError] = useState(false);
+  const [selectError, setSelectError] = useState(false);
 
-  const setId = () => {
-    const maxId = Math.max(...todos.map(todo => todo.id));
-
-    return maxId + 1;
+  const setTodoId = () => {
+    return todos.length ? Math.max(...todos.map(todo => todo.id)) + 1 : 1;
   };
 
   const handlerSubmit = (e: React.FormEvent) => {
@@ -42,8 +41,8 @@ export const App = () => {
     setTodos(prevTodos => [
       ...prevTodos,
       {
-        id: setId(),
-        title: inputTitle,
+        id: setTodoId(),
+        title: inputTitle.replace(/[^a-zA-Zа-яА-ЯіІїЇєЄґҐ0-9\s]/g, ''),
         completed: false,
         userId: +selectedUser,
         user: users.find(user => user.id === +selectedUser),
@@ -55,7 +54,7 @@ export const App = () => {
     <div className="App">
       <h1>Add todo form</h1>
 
-      <form onSubmit={handlerSubmit} action="/api/todos" method="POST">
+      <form onSubmit={handlerSubmit} method="POST">
         <div className="field">
           <label htmlFor="titleInput">Title: </label>
           <input
@@ -99,7 +98,7 @@ export const App = () => {
             })}
           </select>
 
-          {selectEroor && <span className="error">Please choose a user</span>}
+          {selectError && <span className="error">Please choose a user</span>}
         </div>
 
         <button type="submit" data-cy="submitButton">
